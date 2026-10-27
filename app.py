@@ -1,41 +1,34 @@
 import os
 import sqlite3
-import urllib.parse as urlparse
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 app = Flask(__name__)
 app.secret_key = 'ozon_secret_key'
 
-# Функция для получения подключения к нужной базе данных
 def get_db_connection():
-    # Проверяем, есть ли ссылка на PostgreSQL от Render
     db_url = os.environ.get('DATABASE_URL')
     
     if db_url:
-        # Если мы на сервере, подключаемся к PostgreSQL
         import psycopg2
-        from psycopg2.extras import DictCursor
-        
-        # Исправляем схему URL, если требуется для psycopg2
+        # Render выдает ссылку, начинающуюся с postgres://, а библиотеке psycopg2 нужна postgresql://
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
-            
-        conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+        
+        # Подключаемся к PostgreSQL
+        conn = psycopg2.connect(db_url)
         return conn
     else:
-        # Если мы запускаем на компьютере, используем SQLite
+        # Локально на компьютере используем SQLite
         conn = sqlite3.connect('users.db')
-        conn.row_factory = sqlite3.Row
         return conn
 
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Синтаксис создания таблицы для обеих БД
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
-        # Для PostgreSQL
+        # Для PostgreSQL на сервере
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -45,7 +38,7 @@ def init_db():
             )
         ''')
     else:
-        # Для SQLite
+        # Для SQLite на компьютере
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,9 +62,9 @@ def login():
         cursor = conn.cursor()
         
         if os.environ.get('DATABASE_URL'):
-            cursor.execute('SELECT * FROM users WHERE username = %s AND password = %s', (username, password))
+            cursor.execute('SELECT username, password, balance FROM users WHERE username = %s AND password = %s', (username, password))
         else:
-            cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
+            cursor.execute('SELECT username, password, balance FROM users WHERE username = ? AND password = ?', (username, password))
             
         user = cursor.fetchone()
         conn.close()
@@ -105,7 +98,7 @@ def register():
             flash('Регистрация успешна! Войдите в аккаунт.', 'success')
             return redirect(url_for('login'))
         except Exception:
-            flash('Пользователь с таким именем уже существует или произошла ошибка!', 'error')
+            flash('Пользователь с таким именем уже существует!', 'error')
             return redirect(url_for('register'))
             
     return render_template('register.html')
@@ -124,7 +117,7 @@ def dashboard():
             cursor.execute('SELECT balance FROM users WHERE username = ?', (username,))
             
         row = cursor.fetchone()
-        balance = row['balance'] if row else 0.0
+        balance = row[0] if row else 500.0
         conn.close()
         
         products = [
@@ -159,7 +152,7 @@ def buy_product(product_id, price):
             cursor.execute('SELECT balance FROM users WHERE username = ?', (username,))
             
         row = cursor.fetchone()
-        current_balance = row['balance'] if row else 0.0
+        current_balance = row[0] if row else 500.0
         
         if current_balance >= price:
             new_balance = current_balance - price
@@ -202,4 +195,3 @@ def logout():
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
-
