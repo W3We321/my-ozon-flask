@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Ozon - Регистрация</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f5f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); width: 320px; text-align: center; }
+        h2 { color: #f91155; margin-bottom: 24px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #e0e2e6; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .btn-pink { background-color: #f91155; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 12px; }
+        .btn-pink:hover { background-color: #d60e47; }
+        a { color: #005bff; text-decoration: none; font-weight: bold; }
+        .flash { color: #f91155; margin-bottom: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Создать аккаунт</h2>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="flash">{{ messages[0] }}</div>
+          {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <input type="text" name="username" placeholder="Придумайте имя" required>
+            <input type="password" name="password" placeholder="Придумайте пароль" required>
+            <button type="submit" class="btn-pink">Зарегистрироваться</button>
+        </form>
+        <p style="font-size: 14px; margin-top: 20px;">Уже есть аккаунт? <a href="/login">Войти</a></p>
+    </div>
+</body>
+</html>
